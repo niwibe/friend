@@ -301,16 +301,19 @@ which contains a map to be called with a ring handler."
    Returns nil otherwise, indicating that the identity is not authorized
    for the set of required roles. If :roles is a fn, it will be executed
    with no args and assumed to return a collection of roles."
-  [roles identity]
-  (let [granted-roles (-> identity current-authentication :roles)
-        granted-roles (if (fn? granted-roles)
-                        (granted-roles)
-                        granted-roles)]
-
-    (first (for [granted granted-roles
-                 required roles
-                 :when (isa? granted required)]
-             granted))))
+  ([roles identity] (authorized? roles identity nil))
+  ([roles identity hierarchy]
+   (let [isa?' (if (nil? hierarchy)
+                 isa?
+                 (partial isa? hierarchy))
+         granted-roles (-> identity current-authentication :roles)
+         granted-roles (if (fn? granted-roles)
+                         (granted-roles)
+                         granted-roles)]
+     (first (for [granted granted-roles
+                  required roles
+                  :when (isa?' granted required)]
+              granted)))))
 
 (defmacro authorize
   "Macro that only allows the evaluation of the given body of code if the
