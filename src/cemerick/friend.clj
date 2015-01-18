@@ -375,10 +375,11 @@ which contains a map to be called with a ring handler."
   [handler roles]
   (if (empty? roles)
     (throw (IllegalArgumentException. "roles cannot be empty")))
-
   (fn [request]
-    (if (authorized? roles (identity request))
-      (handler request)
-      (throw-unauthorized (identity request)
-                          {::wrapped-handler handler
-                           ::required-roles roles}))))
+    (let [auth-config (:cemerick.friend/auth-config request)
+          hierarchy   (:roles-hierarchy auth-config)]
+      (if (authorized? roles (identity request) hierarchy)
+        (handler request)
+        (throw-unauthorized (identity request)
+                            {::wrapped-handler handler
+                             ::required-roles roles})))))
