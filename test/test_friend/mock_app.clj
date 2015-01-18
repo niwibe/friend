@@ -108,16 +108,20 @@
                     :password (creds/hash-bcrypt "user_password")
                     :roles #{::user}}})
 
-(derive ::admin ::user)
 
 (def api-users {"api-key" {:username "api-key"
                            :password (creds/hash-bcrypt "api-pass")
                            :roles #{:api}}})
 
+(def test-hierarchy
+  (-> (make-hierarchy)
+      (derive ::admin ::user)))
+
 (def mock-app
   (-> mock-app*
     (friend/authenticate
       {:credential-fn (partial creds/bcrypt-credential-fn users)
+       :roles-hierarchy test-hierarchy
        :unauthorized-handler #(if-let [msg (-> % ::friend/authorization-failure :response-msg)]
                                 {:status 403 :body msg}
                                 (#'friend/default-unauthorized-handler %)) 
